@@ -1,4 +1,65 @@
 $( document ).ready(function() {
+
+	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
+		.then(response => response.json())
+		.then(data => {
+		const nombres = data.map(record => record.Nombre);
+
+		const nombreInput = document.getElementById('nombreInput');
+		const dropdown = document.createElement('ul');
+		dropdown.classList.add('dropdown');
+
+		const button = document.getElementById('miBoton');
+		button.disabled = true;
+
+		nombreInput.addEventListener('input', function() {
+			const searchTerm = this.value.toLowerCase();
+			const filteredNombres = nombres.filter(nombre =>
+			nombre.toLowerCase().includes(searchTerm)
+			);
+
+			showDropdownOptions(filteredNombres);
+		});
+
+		nombreInput.addEventListener('change', function() {
+			const selectedOption = nombres.find(
+			nombre => nombre.toLowerCase() === this.value.toLowerCase()
+			);
+			button.disabled = !selectedOption;
+		});
+
+		function showDropdownOptions(options) {
+			dropdown.innerHTML = '';
+
+			options.forEach(option => {
+			const li = document.createElement('li');
+			li.textContent = option;
+
+			li.addEventListener('click', function() {
+				nombreInput.value = option;
+				dropdown.innerHTML = '';
+				button.disabled = false;
+			});
+
+			dropdown.appendChild(li);
+			});
+
+			if (options.length > 0) {
+			nombreInput.parentNode.appendChild(dropdown);
+			} else {
+			dropdown.innerHTML = '';
+			button.disabled = true;
+			}
+		}
+		})
+		.catch(error => {
+		// Manejo de errores
+		console.log(error);
+		});
+
+	
+
+
 	var inputs = document.querySelectorAll( '.inputfile' );
 	Array.prototype.forEach.call( inputs, function( input )
 	{
@@ -118,18 +179,74 @@ function recognizeFile(file){
 		})
 		.then(function(data){
 			console.log("aaaaaaaaahasdasdada: ", data.text)
-			const texto = "ap (© Gd BOXN@ UF .al 64% m 12:27 PM\n<  Miactividad +\nDia Semana Mes\n< 22-28 de mayo 5\n26,692 steps\neee --10,000\n5,000\n1.01\nlun, mar. mié...";
-
-			const pattern = /(\d{1,3}(?:,\d{3})*)\s*steps/i;
+			const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
 			const match = data.text.match(pattern);
 
 			if (match) {
-				const valor = match[1].replace(/,/g, ''); // Remover comas de los números
+				const valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
 				console.log("El valor numérico antes de 'steps' es:", valor);
 			} else {
 				console.log("No se encontró ningún valor numérico antes de 'steps'");
 			}
 
+			console.log("ANTES")
+			fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
+				.then(response => response.json())
+				.then(data => {
+					data.forEach(record => {
+						console.log("DURANTE")
+						const nombre = record.Nombre;
+						const equipo = record.Equipo;
+						const semana1 = record['Semana 1'];
+						const semana2 = record['Semana 2'];
+						const semana3 = record['Semana 3'];
+						const total = record.Total;
+					
+						// Aquí puedes hacer lo que desees con los datos
+						console.log(nombre, equipo, semana1, semana2, semana3, total);
+					});
+				})
+				.catch(error => {
+					// Manejo de errores
+					console.log(error);
+				});
+			
+				console.log("DESPUES")
+
 			progressUpdate({ status: 'done', data: data })
 		})
 }
+
+
+function buscarNombre() {
+	const nombreInput = document.getElementById('nombreInput');
+	const nombreSeleccionado = nombreInput.value;
+  
+	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
+	  .then(response => response.json())
+	  .then(data => {
+		const nombres = data.map(record => record.Nombre);
+  
+		const selectizeConfig = {
+		  options: nombres,
+		  create: false,
+		  onChange: function(value) {
+			nombreInput.value = value;
+		  }
+		};
+  
+		$(nombreInput).selectize(selectizeConfig);
+  
+		if (nombres.includes(nombreSeleccionado)) {
+		  console.log('El nombre se encuentra en los registros.');
+		} else {
+		  console.log('El nombre no se encuentra en los registros.');
+		}
+	  })
+	  .catch(error => {
+		// Manejo de errores
+		console.log(error);
+	  });
+  }
+  
+  
