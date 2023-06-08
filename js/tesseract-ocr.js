@@ -2,60 +2,66 @@ $( document ).ready(function() {
 
 	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
 		.then(response => response.json())
-		.then(data => {
-		const nombres = data.map(record => record.Nombre);
+    	.then(data => {
+      		const nombres = data.map(record => record.Nombre);
 
-		const nombreInput = document.getElementById('nombreInput');
-		const dropdown = document.createElement('ul');
-		dropdown.classList.add('dropdown');
+			const nombreInput = document.getElementById('nombreInput');
+			const semanaInput = document.getElementById('semanaInput');
+			const dropdown = document.createElement('ul');
+			dropdown.classList.add('dropdown');
 
-		const button = document.getElementById('miBoton');
-		button.disabled = true;
+			const button = document.getElementById('miBoton');
+			button.disabled = true;
 
-		nombreInput.addEventListener('input', function() {
-			const searchTerm = this.value.toLowerCase();
-			const filteredNombres = nombres.filter(nombre =>
-			nombre.toLowerCase().includes(searchTerm)
-			);
+			nombreInput.addEventListener('input', function() {
+				const searchTerm = this.value.toLowerCase();
+				const filteredNombres = nombres.filter(nombre =>
+					nombre.toLowerCase().includes(searchTerm)
+				);
 
-			showDropdownOptions(filteredNombres);
-		});
+        		showDropdownOptions(filteredNombres);
+     		});
 
-		nombreInput.addEventListener('change', function() {
-			const selectedOption = nombres.find(
-			nombre => nombre.toLowerCase() === this.value.toLowerCase()
-			);
-			button.disabled = !selectedOption;
-		});
+      		nombreInput.addEventListener('change', function() {
+        		const selectedOption = nombres.find(
+          			nombre => nombre.toLowerCase() === this.value.toLowerCase()
+        		);
 
-		function showDropdownOptions(options) {
-			dropdown.innerHTML = '';
+       			button.disabled = !selectedOption;
+      		});
 
-			options.forEach(option => {
-			const li = document.createElement('li');
-			li.textContent = option;
-
-			li.addEventListener('click', function() {
-				nombreInput.value = option;
-				dropdown.innerHTML = '';
-				button.disabled = false;
+			semanaInput.addEventListener('change', function() {
+				button.disabled = semanaInput.value === "";
 			});
 
-			dropdown.appendChild(li);
+			function showDropdownOptions(options) {
+				dropdown.innerHTML = '';
+
+				options.forEach(option => {
+					const li = document.createElement('li');
+					li.textContent = option;
+
+				li.addEventListener('click', function() {
+					nombreInput.value = option;
+					dropdown.innerHTML = '';
+					button.disabled = false;
+				});
+
+				dropdown.appendChild(li);
 			});
 
 			if (options.length > 0) {
-			nombreInput.parentNode.appendChild(dropdown);
+				nombreInput.parentNode.appendChild(dropdown);
 			} else {
-			dropdown.innerHTML = '';
-			button.disabled = true;
+				dropdown.innerHTML = '';
+				button.disabled = true;
 			}
-		}
-		})
-		.catch(error => {
-		// Manejo de errores
-		console.log(error);
-		});
+     	}
+    })
+    .catch(error => {
+      	console.log(error);
+    });
+
 
 	
 
@@ -182,36 +188,41 @@ function recognizeFile(file){
 			const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
 			const match = data.text.match(pattern);
 
+			let valor = 0;
+
 			if (match) {
-				const valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
+				valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
 				console.log("El valor numérico antes de 'steps' es:", valor);
 			} else {
 				console.log("No se encontró ningún valor numérico antes de 'steps'");
 			}
 
-			console.log("ANTES")
-			fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
+			
+			const nombreInput = document.getElementById('nombreInput');
+			const semanaInput = document.getElementById('semanaInput');
+
+			const selectedNombre = nombreInput.value;
+			const selectedSemana = semanaInput.value;
+			// const valor = 150;
+
+			fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab/Nombre/${selectedNombre}`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					[selectedSemana]: valor
+				})
+			})
 				.then(response => response.json())
 				.then(data => {
-					data.forEach(record => {
-						console.log("DURANTE")
-						const nombre = record.Nombre;
-						const equipo = record.Equipo;
-						const semana1 = record['Semana 1'];
-						const semana2 = record['Semana 2'];
-						const semana3 = record['Semana 3'];
-						const total = record.Total;
-					
-						// Aquí puedes hacer lo que desees con los datos
-						console.log(nombre, equipo, semana1, semana2, semana3, total);
-					});
+					console.log('Registro actualizado:', data);
+					// Realizar acciones adicionales después de actualizar el registro
 				})
 				.catch(error => {
-					// Manejo de errores
 					console.log(error);
 				});
-			
-				console.log("DESPUES")
+
 
 			progressUpdate({ status: 'done', data: data })
 		})
