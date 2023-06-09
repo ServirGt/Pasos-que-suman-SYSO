@@ -3,6 +3,12 @@ $( document ).ready(function() {
 	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
 		.then(response => response.json())
     	.then(data => {
+
+			const myInput = $('#file-1');
+
+			// Establecer el atributo "disabled"
+			myInput.prop('disabled', true);
+
       		const nombres = data.map(record => record.Nombre);
 
 			const nombreInput = document.getElementById('nombreInput');
@@ -45,6 +51,7 @@ $( document ).ready(function() {
 					nombreInput.value = option;
 					dropdown.innerHTML = '';
 					button.disabled = false;
+					myInput.prop('disabled', false);
 				});
 
 				dropdown.appendChild(li);
