@@ -11,10 +11,14 @@ $( document ).ready(function() {
 
       		const nombres = data.map(record => record.Nombre);
 
-			const nombreInput = document.getElementById('nombreInput');
-			const semanaInput = document.getElementById('semanaInput');
 			const dropdown = document.createElement('ul');
 			dropdown.classList.add('dropdown');
+
+			const nombreInput = document.getElementById('nombreInput');
+			const contenedorInput = nombreInput.parentElement;
+			dropdown.style.display = 'none'
+
+			const semanaInput = document.getElementById('semanaInput');
 
 			const button = document.getElementById('miBoton');
 			button.disabled = true;
@@ -57,8 +61,13 @@ $( document ).ready(function() {
 				dropdown.appendChild(li);
 			});
 
+			dropdown.style.display = 'none'
+
 			if (options.length > 0) {
-				nombreInput.parentNode.appendChild(dropdown);
+				// nombreInput.parentNode.appendChild(dropdown);
+				const nextSibling = nombreInput.nextSibling;
+    			nombreInput.parentNode.insertBefore(dropdown, nextSibling);
+				dropdown.style.display = 'block'
 			} else {
 				dropdown.innerHTML = '';
 				button.disabled = true;
@@ -88,7 +97,8 @@ $( document ).ready(function() {
 				fileName = e.target.value.split( '\\' ).pop();
 
 			if( fileName ){
-				label.querySelector( 'span' ).innerHTML = fileName;
+				// label.querySelector( 'span' ).innerHTML = fileName;
+				label.querySelector( 'span' ).innerHTML = "Cargando...";
 
 				let reader = new FileReader();
 				reader.onload = function () {
@@ -171,69 +181,98 @@ function progressUpdate(packet){
 	}
 }
 
-function recognizeFile(file){
+
+
+function recognizeFile(file) {
 	$("#log").empty();
-  	const corePath = window.navigator.userAgent.indexOf("Edge") > -1
-    ? 'js/tesseract-core.asm.js'
-    : 'js/tesseract-core.wasm.js';
-
-
+	const corePath = window.navigator.userAgent.indexOf("Edge") > -1
+	  ? 'js/tesseract-core.asm.js'
+	  : 'js/tesseract-core.wasm.js';
+  
 	const worker = new Tesseract.TesseractWorker({
-		corePath,
+	  corePath,
 	});
-
-	worker.recognize(file,
-		$("#langsel").val()
-	)
-		.progress(function(packet){
-			console.info(packet)
-			progressUpdate(packet)
-
-		})
-		.then(function(data){
-			console.log("aaaaaaaaahasdasdada: ", data.text)
-			const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
-			const match = data.text.match(pattern);
-
-			let valor = 0;
-
-			if (match) {
-				valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
-				console.log("El valor numérico antes de 'steps' es:", valor);
-			} else {
-				console.log("No se encontró ningún valor numérico antes de 'steps'");
+  
+	worker.recognize(file, $("#langsel").val())
+	  .progress(function(packet) {
+		console.info(packet);
+		progressUpdate(packet);
+	  })
+	  .then(function(data) {
+		console.log("aaaaaaaaahasdasdada: ", data.text);
+		const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
+		const match = data.text.match(pattern);
+  
+		let valor = 0;
+  
+		if (match) {
+		  valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
+		  console.log("El valor numérico antes de 'steps' es:", valor);
+		} else {
+		  console.log("No se encontró ningún valor numérico antes de 'steps'");
+		}
+  
+		const nombreInput = document.getElementById('nombreInput');
+		const semanaInput = document.getElementById('semanaInput');
+  
+		const selectedNombre = nombreInput.value;
+		const selectedSemana = semanaInput.value;
+  
+		fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab`, {
+			method: 'GET',
+			headers: {
+			  'Content-Type': 'application/json'
 			}
-
-			
-			const nombreInput = document.getElementById('nombreInput');
-			const semanaInput = document.getElementById('semanaInput');
-
-			const selectedNombre = nombreInput.value;
-			const selectedSemana = semanaInput.value;
-			// const valor = 150;
-
-			fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab/Nombre/${selectedNombre}`, {
-				method: 'PATCH',
-				headers: {
+		  })
+		  .then(response => response.json())
+		  .then(data => {
+			const record = data.find(item => item.Nombre === selectedNombre && item[selectedSemana] !== undefined);
+			console.log(record[selectedSemana].length)
+			if (record[selectedSemana].length != 0) {
+			  // Ya existe un valor para esa combinación de nombre y semana
+			  alert("Ya existe un valor para el nombre y la semana seleccionada. No es posible actualizarlo.");
+			  nombreInput.value = '';
+			  location.reload();
+			} else {
+			  // No existe un valor para esa combinación de nombre y semana, realizar la actualización
+			  fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab/Nombre/${selectedNombre}`, {
+				  method: 'PATCH',
+				  headers: {
 					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+				  },
+				  body: JSON.stringify({
 					[selectedSemana]: valor
+				  })
 				})
-			})
 				.then(response => response.json())
 				.then(data => {
 					console.log('Registro actualizado:', data);
-					// Realizar acciones adicionales después de actualizar el registro
+					alert('Hola ' + selectedNombre + ', se han registrado ' + valor + ' pasos. Si este número no es correcto, por favor comunícate con un miembro del Comité SYSO.');
+					nombreInput.value = '';
+					var span = document.getElementById("algo");
+					span.innerHTML = "Seleccionar screenshot";
+
+
+				})
+				.finally(function() {
+					button.innerText = "Texto por defecto";
 				})
 				.catch(error => {
-					console.log(error);
+				  console.log(error);
 				});
-
-
-			progressUpdate({ status: 'done', data: data })
-		})
-}
+			}
+		  })
+		  .catch(error => {
+			console.log(error);
+		  });
+  
+		progressUpdate({ status: 'done', data: data });
+	  });
+  }
+  
+  
+  
+  
 
 
 function buscarNombre() {
@@ -254,7 +293,7 @@ function buscarNombre() {
 		};
   
 		$(nombreInput).selectize(selectizeConfig);
-  
+
 		if (nombres.includes(nombreSeleccionado)) {
 		  console.log('El nombre se encuentra en los registros.');
 		} else {
@@ -264,7 +303,7 @@ function buscarNombre() {
 	  .catch(error => {
 		// Manejo de errores
 		console.log(error);
-	  });
+	});
   }
   
   
