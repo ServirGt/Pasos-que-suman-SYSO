@@ -266,6 +266,7 @@ function recognizeFile(file) {
 											nombreInput.value = '';
 											var span = document.getElementById("algo");
 											span.innerHTML = "Seleccionar screenshot";
+											location.reload();
 										})
 										.finally(function() {
 											button.innerText = "Texto por defecto";
