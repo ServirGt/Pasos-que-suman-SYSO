@@ -1,15 +1,19 @@
 $( document ).ready(function() {
 
-	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
+	fetch('https://api.airtable.com/v0/appE1zifSr17F9ozk/Hoja%201', {
+		headers: {
+			'Authorization': 'Bearer patXVCepNHEZ3KKAE.c9516d96f418fb477d8e292ee5eff710d3ffeeacb3f009ce9c36d8d98410987f'
+		},
+	})
 		.then(response => response.json())
     	.then(data => {
-
 			const myInput = $('#file-1');
 
 			// Establecer el atributo "disabled"
 			myInput.prop('disabled', true);
 
-      		const nombres = data.map(record => record.Nombre);
+      		// const nombres = data.map(record => record.Nombre);
+			const nombres = data.records.map(record => record.fields.Nombre);
 
 			const dropdown = document.createElement('ul');
 			dropdown.classList.add('dropdown');
@@ -186,124 +190,107 @@ function progressUpdate(packet){
 function recognizeFile(file) {
 	$("#log").empty();
 	const corePath = window.navigator.userAgent.indexOf("Edge") > -1
-	  ? 'js/tesseract-core.asm.js'
-	  : 'js/tesseract-core.wasm.js';
-  
+		? 'js/tesseract-core.asm.js'
+		: 'js/tesseract-core.wasm.js';
+
 	const worker = new Tesseract.TesseractWorker({
-	  corePath,
+		corePath,
 	});
-  
+
 	worker.recognize(file, $("#langsel").val())
-	  .progress(function(packet) {
-		console.info(packet);
-		progressUpdate(packet);
-	  })
-	  .then(function(data) {
-		console.log("aaaaaaaaahasdasdada: ", data.text);
-		const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
-		const match = data.text.match(pattern);
-  
-		let valor = 0;
-  
-		if (match) {
-		  valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
-		  console.log("El valor numérico antes de 'steps' es:", valor);
-		} else {
-		  console.log("No se encontró ningún valor numérico antes de 'steps'");
-		}
-  
-		const nombreInput = document.getElementById('nombreInput');
-		const semanaInput = document.getElementById('semanaInput');
-  
-		const selectedNombre = nombreInput.value;
-		const selectedSemana = semanaInput.value;
-  
-		fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab`, {
-			method: 'GET',
-			headers: {
-			  'Content-Type': 'application/json'
-			}
-		  })
-		  .then(response => response.json())
-		  .then(data => {
-			const record = data.find(item => item.Nombre === selectedNombre && item[selectedSemana] !== undefined);
-			console.log(record[selectedSemana].length)
-			if (record[selectedSemana].length != 0) {
-			  // Ya existe un valor para esa combinación de nombre y semana
-			  alert("Ya existe un valor para el nombre y la semana seleccionada. No es posible actualizarlo.");
-			  nombreInput.value = '';
-			  location.reload();
+		.progress(function(packet) {
+			console.info(packet);
+			progressUpdate(packet);
+		})
+		.then(function(data) {
+			console.log("aaaaaaaaahasdasdada: ", data.text);
+			const pattern = /(\d{1,3}(?:[,.]\d{3})*)\s*(?:steps|passi|pasos)/i;
+			const match = data.text.match(pattern);
+
+			let valor = 0;
+
+			if (match) {
+				valor = match[1].replace(/[,.]/g, ''); // Remover comas de los números
+				console.log("El valor numérico antes de 'steps' es:", valor);
 			} else {
-			  // No existe un valor para esa combinación de nombre y semana, realizar la actualización
-			  fetch(`https://sheetdb.io/api/v1/ut53j8nck1dab/Nombre/${selectedNombre}`, {
-				  method: 'PATCH',
-				  headers: {
+				console.log("No se encontró ningún valor numérico antes de 'steps'");
+			}
+
+			const nombreInput = document.getElementById('nombreInput');
+			const semanaInput = document.getElementById('semanaInput');
+
+			const selectedNombre = nombreInput.value;
+			const selectedSemana = semanaInput.value;
+
+			fetch(`https://api.airtable.com/v0/appE1zifSr17F9ozk/Hoja%201?filterByFormula=AND(Nombre%3D%27${selectedNombre}%27%2CNOT({${selectedSemana}}%3D%27%27))`, {
+				headers: {
+					'Authorization': 'Bearer patXVCepNHEZ3KKAE.c9516d96f418fb477d8e292ee5eff710d3ffeeacb3f009ce9c36d8d98410987f',
 					'Content-Type': 'application/json'
-				  },
-				  body: JSON.stringify({
-					[selectedSemana]: valor
-				  })
-				})
+				}
+			})
 				.then(response => response.json())
 				.then(data => {
-					console.log('Registro actualizado:', data);
-					alert('Hola ' + selectedNombre + ', se han registrado ' + valor + ' pasos. Si este número no es correcto, por favor comunícate con un miembro del Comité SYSO.');
-					nombreInput.value = '';
-					var span = document.getElementById("algo");
-					span.innerHTML = "Seleccionar screenshot";
-
-
-				})
-				.finally(function() {
-					button.innerText = "Texto por defecto";
+					console.log(data)
+					if (data.records.length != 0) {
+						// Ya existe un valor para esa combinación de nombre y semana
+						alert("Ya existe un valor para el nombre y la semana seleccionada. No es posible actualizarlo.");
+						nombreInput.value = '';
+						location.reload();
+					} else {
+						// No existe un valor para esa combinación de nombre y semana, realizar la actualización
+						fetch(`https://api.airtable.com/v0/appE1zifSr17F9ozk/Hoja%201?filterByFormula=Nombre='${selectedNombre}'`, {
+							headers: {
+								'Authorization': 'Bearer patXVCepNHEZ3KKAE.c9516d96f418fb477d8e292ee5eff710d3ffeeacb3f009ce9c36d8d98410987f'
+							},
+						})
+							.then(response => response.json())
+							.then(data => {
+								if (data.records && data.records.length > 0) {
+									const recordId = data.records[0].id;
+									fetch(`https://api.airtable.com/v0/appE1zifSr17F9ozk/Hoja%201/${recordId}`, {
+										method: 'PATCH',
+										headers: {
+											'Authorization': 'Bearer patXVCepNHEZ3KKAE.c9516d96f418fb477d8e292ee5eff710d3ffeeacb3f009ce9c36d8d98410987f',
+											'Content-Type': 'application/json'
+										},
+										body: JSON.stringify({
+											fields: {
+												[selectedSemana]: parseInt(valor)
+											}
+										})
+									})
+										.then(response => response.json())
+										.then(data => {
+											console.log('Registro actualizado:', data);
+											alert('Hola ' + selectedNombre + ', se han registrado ' + valor + ' pasos. Si este número no es correcto, por favor comunícate con un miembro del Comité SYSO.');
+											nombreInput.value = '';
+											var span = document.getElementById("algo");
+											span.innerHTML = "Seleccionar screenshot";
+										})
+										.finally(function() {
+											button.innerText = "Texto por defecto";
+											location.reload();
+										})
+										.catch(error => {
+											console.log(error);
+										});
+								} else {
+									console.log('Registro no encontrado');
+								}
+							})
+							.catch(error => {
+								console.log(error);
+							});
+					}
 				})
 				.catch(error => {
-				  console.log(error);
+					console.log(error);
 				});
-			}
-		  })
-		  .catch(error => {
-			console.log(error);
-		  });
-  
-		progressUpdate({ status: 'done', data: data });
-	  });
-  }
-  
-  
-  
-  
+
+			progressUpdate({ status: 'done', data: data });
+		});
+}
 
 
-function buscarNombre() {
-	const nombreInput = document.getElementById('nombreInput');
-	const nombreSeleccionado = nombreInput.value;
-  
-	fetch('https://sheetdb.io/api/v1/ut53j8nck1dab/')
-	  .then(response => response.json())
-	  .then(data => {
-		const nombres = data.map(record => record.Nombre);
-  
-		const selectizeConfig = {
-		  options: nombres,
-		  create: false,
-		  onChange: function(value) {
-			nombreInput.value = value;
-		  }
-		};
-  
-		$(nombreInput).selectize(selectizeConfig);
-
-		if (nombres.includes(nombreSeleccionado)) {
-		  console.log('El nombre se encuentra en los registros.');
-		} else {
-		  console.log('El nombre no se encuentra en los registros.');
-		}
-	  })
-	  .catch(error => {
-		// Manejo de errores
-		console.log(error);
-	});
-  }
   
   
