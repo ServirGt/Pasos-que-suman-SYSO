@@ -1,5 +1,7 @@
 $( document ).ready(function() {
 
+	alert("Hola! Para subir tus pasos por favor configura el tema de la aplicacion de Google Fit a Claro. Para hacer este cambio dirigete a tu perfil -> ajustes (icono de engranaje) -> Tema y selecciona el tema 'claro'. Si subes un screenshot con tema oscuro es muy probable que se te registren los pasos de manera incorrecta.")
+
 	fetch('https://api.airtable.com/v0/appE1zifSr17F9ozk/Hoja%201', {
 		headers: {
 			'Authorization': 'Bearer patXVCepNHEZ3KKAE.c9516d96f418fb477d8e292ee5eff710d3ffeeacb3f009ce9c36d8d98410987f'
